@@ -14,11 +14,6 @@ import numpy as np
 
 
 
-def testPrint(s):
-    print(s)
-
-def testP():
-    print("inside")
 
 
     
@@ -34,9 +29,13 @@ def deselectAll():
         
         
 def selectAndActivateByName(name):
-    bpy.data.objects[name].select=True
-    bpy.context.scene.objects.active = bpy.data.objects[name]
-#--------------------------------------------------------------
+    #bpy.data.objects[name].select=True
+    #deprecated since 2.8 bpy.context.scene.objects.active = bpy.data.objects[name]
+    bpy.context.view_layer.objects.active = bpy.data.objects[name]
+    bpy.context.active_object.select_set(state=True)
+
+
+    #--------------------------------------------------------------
 
 def selectOne(name):
     deselectAll()
@@ -64,6 +63,11 @@ def deleteAllButName(name):
             selectOne(ob.name)
             bpy.ops.object.delete() 
         
+def deleteAll():
+    for ob in bpy.data.objects:
+        if ob.name!='Camera' and ob.name!='Lamp':
+            selectOne(ob.name)
+            bpy.ops.object.delete() 
 
 
 
@@ -106,14 +110,6 @@ def curveDataBezierFromPoints(coords,name,tClosed):
 
     return curveData
 
-    # create Object
-    curveOB = bpy.data.objects.new(name, curveData)
-
-    # attach to scene and validate context
-    scn = bpy.context.scene
-    scn.objects.link(curveOB)
-    scn.objects.active = curveOB
-    curveOB.select = True
     
 
 def curveBezierFromPoints(coords,name,tClosed):
@@ -125,9 +121,14 @@ def curveBezierFromPoints(coords,name,tClosed):
 
     # attach to scene and validate context
     scn = bpy.context.scene
-    scn.objects.link(curveOB)
-    scn.objects.active = curveOB
-    curveOB.select = True
+    #scn.objects.link(curveOB) - deprecated since 2.8 use the command below
+    bpy.context.collection.objects.link(curveOB)
+    #scn.objects.active = curveOB
+    bpy.context.view_layer.objects.active = curveOB
+
+    #curveOB.select = True
+    curveOB.select_set(state=True)
+    #bpy.context.active_object.select_set(state=True)
     
 
 
@@ -161,9 +162,14 @@ def curveFromPoints(coords,name,tClosed):
 
     # attach to scene and validate context
     scn = bpy.context.scene
-    scn.objects.link(curveOB)
-    scn.objects.active = curveOB
-    curveOB.select = True
+    #scn.objects.link(curveOB) - deprecated since 2.8 use the command below
+    bpy.context.collection.objects.link(curveOB)
+    #scn.objects.active = curveOB
+    bpy.context.view_layer.objects.active = curveOB
+
+    #curveOB.select = True
+    curveOB.select_set(state=True)
+    #bpy.context.active_object.select_set(state=True)
 
 
 #----------------------------------------------------------------------------------------
@@ -237,9 +243,14 @@ def elipticShift(x,y, dyMax, xFactStart,thick):
 #--- helpers for placing leading edge etc.
 #----------------------------------------------------------------------------------------
 
-
+#takes the x/y points (e.g. leading edge), center is at x=0
+#shifts those points (towards large x) beyond  xFactStart back (negative y)
+#e.g xFactStart=0.8 -> the outer 20% of points will be shifted backwards
+#the shift is given by x^p with the maximal shift (the outermost point) is dyMax 
 #---------------------------------------------
-def powerShift(x,y, p, dyMax, xFactStart,thick):
+def powerShift(x,y, p, dyMax, xFactStart):
+    thick=0.0 # formerly used for reducing the geometry (e.g. for laminating) new version uses shrink
+              # in placeSetcions
     ysh=np.copy(y)
     xmax=np.max(x)
     #xStart=xmax*(1.0-xFactStart)+thick/2
@@ -262,31 +273,32 @@ def powerShift(x,y, p, dyMax, xFactStart,thick):
 
 #---------------------------------------------
 
-def placeSections(xV,yV,chV):
+def placeSections(xV,yV,chV,func4coords,quality):
 
     for i in range(0,len(x)):
         scale=chV[i]
         shiftV=[xV[i],yV[i],0.0]
-        hCoord=h105CoordsFull(scale,shiftV)
-        curveFromPoints(hCoord,'2dsection_'+str(i),True)
+        hCoord=func4coords(quality,scale,shiftV)
+        curveBezierFromPoints(hCoord,'2dsection_'+str(i),True)
         #print('fut a')
         #print(str(hCoord))
         #print('fut b')
 #---------------------------------------------
 
-def placeSectionsMinLimited(xV,yV,chV,minCh):
+
+def placeSectionsMinLimited(xV,yV,chV,minCh,func4coords,quality):
 
     sectionNames=[]
     
-    for i in range(0,len(x)):
+    for i in range(0,len(xV)):
         if chV[i]<minCh:
             print('Skipping')
         else:
             scale=chV[i]
             shiftV=[xV[i],yV[i],0.0]
-            hCoord=h105CoordsFull(scale,shiftV)
+            hCoord=func4coords(quality,scale,shiftV)
             name='2dsection_'+str(i)
-            curveFromPoints(hCoord,name,True)
+            curveBezierFromPoints(hCoord,name,True)
             sectionNames.append(name)
             
         #print('fut a')
@@ -295,12 +307,14 @@ def placeSectionsMinLimited(xV,yV,chV,minCh):
     return sectionNames
 #---------------------------------------------
 
-def placeSectionsShrinked(xV,yV,chV,dShrink):
+
+
+def placeSectionsShrinked(xV,yV,chV,dShrink,func4coords,func4idx,quality):
     xnV=np.array([-1.0,0.0,0.0])
     nV=np.array([0,0,0])
     locV=np.array([0,0,0])
     
-    leIdx=h105CoordsFullLeadingdgeIdx()
+    leIdx=func4idx(quality)
      
     for i in range(0,len(x)):
 
@@ -312,7 +326,7 @@ def placeSectionsShrinked(xV,yV,chV,dShrink):
         idx2Kill=np.array([0])
         scale=chV[i]
         shiftV=[xV[i],yV[i],0.0]
-        hCoord=h105CoordsFull(scale,shiftV) #original chord
+        hCoord=func4coords(quality,scale,shiftV) #original chord
 
         #skip so small thicknes (crude)
         if (max(hCoord[:,2])-min(hCoord[:,2])<3*dShrink):
@@ -460,5 +474,42 @@ def placeSectionsShrinked(xV,yV,chV,dShrink):
                 idx2Kill=idx2Kill-1
                 lastIdx=idx2Kill[j]
                 
-        curveFromPoints(hCoordShrinked,'2dsectionShrinked_'+str(i),True)
+        curveBezierFromPoints(hCoordShrinked,'2dsectionShrinked_'+str(i),True)
 
+
+
+# fits a hull over the wing sections provided
+def bridgeListOfEdgeLoopsCloseOuterWithFace(sectionNames,targetName):
+
+    #make faces ad end loops
+    selectOne(sectionNames[0])
+    bpy.ops.object.convert(target='MESH')
+    bpy.ops.object.editmode_toggle()
+    bpy.ops.mesh.select_all(action='TOGGLE')
+    bpy.ops.mesh.edge_face_add()
+    bpy.ops.object.editmode_toggle()
+
+    selectOne(sectionNames[-1])
+    bpy.ops.object.convert(target='MESH')
+    bpy.ops.object.editmode_toggle()
+    bpy.ops.mesh.select_all(action='TOGGLE')
+    bpy.ops.mesh.edge_face_add()
+    bpy.ops.object.editmode_toggle()
+
+
+    #reselect all , join an dbridge edge loops
+    selectFromList(sectionNames)
+
+    bpy.ops.object.convert(target='MESH')
+    bpy.ops.object.join()
+    bpy.ops.object.editmode_toggle()
+    #select really all in mesh
+    bpy.ops.mesh.select_all(action='TOGGLE')
+    bpy.ops.mesh.select_all(action='TOGGLE')
+    bpy.ops.mesh.bridge_edge_loops()
+
+    bpy.context.selected_objects[0].name=targetName
+    bpy.ops.object.editmode_toggle()
+        
+    
+        
