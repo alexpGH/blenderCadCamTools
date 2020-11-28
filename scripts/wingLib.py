@@ -7,6 +7,8 @@
 
 #THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#For the curve simplification check to have edit>preferences>add-ons> Add curve: simplfy curves+ activated
+
 from __future__ import division      
 import bpy
 import math
@@ -62,7 +64,15 @@ def deleteAllButName(name):
         if ob.name!=name and ob.name!='Camera' and ob.name!='Lamp':
             selectOne(ob.name)
             bpy.ops.object.delete() 
-        
+
+
+def deleteAllButNames(names):
+    for ob in bpy.data.objects:
+        if ob.name not in names and ob.name!='Camera' and ob.name!='Lamp':
+            selectOne(ob.name)
+            bpy.ops.object.delete() 
+
+            
 def deleteAll():
     for ob in bpy.data.objects:
         if ob.name!='Camera' and ob.name!='Lamp':
@@ -70,14 +80,17 @@ def deleteAll():
             bpy.ops.object.delete() 
 
 
-
+def deleteByName(name):
+    selectOne(name)
+    bpy.ops.object.delete()
+    
 #--------------------------------------------------------------
 #--- curve fitting through points
 #--------------------------------------------------------------
 
 
 #--- Bezier -> matches the points exactly (not like NURBS)
-def curveDataBezierFromPoints(coords,name,tClosed):
+def curveDataBezierFromPoints(coords,name,tClosed,tSharpClosed):
     # create the Curve Datablock
     curveData = bpy.data.curves.new(name, type='CURVE')
     curveData.dimensions = '3D'
@@ -106,15 +119,23 @@ def curveDataBezierFromPoints(coords,name,tClosed):
 
     if(tClosed):
         polyline.use_cyclic_u = True
+        #polyline.use_cyclic_v = True
 
+    if(tSharpClosed):
+        #results e.g. in a poined tail for airfoils
+        polyline.bezier_points[0].handle_right_type = 'VECTOR'
+        polyline.bezier_points[0].handle_left_type = 'VECTOR'
+
+        polyline.bezier_points[-1].handle_right_type = 'VECTOR'
+        polyline.bezier_points[-1].handle_left_type = 'VECTOR'
 
     return curveData
 
     
 
-def curveBezierFromPoints(coords,name,tClosed):
+def curveBezierFromPoints(coords,name,tClosed,tSharpClosed):
     # create the Curve Datablock
-    curveData = curveDataBezierFromPoints(coords,name,tClosed)
+    curveData = curveDataBezierFromPoints(coords,name,tClosed,tSharpClosed)
 
     # create Object
     curveOB = bpy.data.objects.new(name, curveData)
@@ -213,7 +234,8 @@ def ellipseParamV(a,b,npoints):
     return x,y
 
 #---------------------------------------------
-def elipticShift(x,y, dyMax, xFactStart,thick):
+def elipticShift(x,y, dyMax, xFactStart,dirFact):
+    thick=0.0
     ysh=np.copy(y)
     xmax=np.max(x)
     #xStart=xmax*(1.0-xFactStart)+thick/2
@@ -231,7 +253,7 @@ def elipticShift(x,y, dyMax, xFactStart,thick):
             else:
                 dy=np.sqrt(b*b*(xloc*xloc/(a*a)-1))-b
                 
-            ysh[i]=y[i]+dy            
+            ysh[i]=y[i]+dirFact*dy            
             print("-> "+str(x[i])+" "+str(xloc)+" "+str(dy)+" "+str(a))
         
     return ysh
@@ -249,6 +271,11 @@ def elipticShift(x,y, dyMax, xFactStart,thick):
 #the shift is given by x^p with the maximal shift (the outermost point) is dyMax 
 #---------------------------------------------
 def powerShift(x,y, p, dyMax, xFactStart):
+    ysh=powerShiftDir(x,y,p,dyMax, xFactStart,1.0) # dirfact fix
+    return ysh    
+
+
+def powerShiftDir(x,y, p, dyMax, xFactStart,dirFact):
     thick=0.0 # formerly used for reducing the geometry (e.g. for laminating) new version uses shrink
               # in placeSetcions
     ysh=np.copy(y)
@@ -264,10 +291,11 @@ def powerShift(x,y, p, dyMax, xFactStart):
         if(xabs>xStart):
             xloc=xabs-xStart
             dy=math.pow(xloc,p)*a                
-            ysh[i]=y[i]-dy            
+            ysh[i]=y[i]-dy*dirFact            
             print("-> "+str(x[i])+" "+str(xloc)+" "+str(dy)+" "+str(a))
         
     return ysh    
+
 
 
 
@@ -279,7 +307,7 @@ def placeSections(xV,yV,chV,func4coords,quality):
         scale=chV[i]
         shiftV=[xV[i],yV[i],0.0]
         hCoord=func4coords(quality,scale,shiftV)
-        curveBezierFromPoints(hCoord,'2dsection_'+str(i),True)
+        curveBezierFromPoints(hCoord,'2dsection_'+str(i),True,True) #sharp closed
         #print('fut a')
         #print(str(hCoord))
         #print('fut b')
@@ -298,7 +326,7 @@ def placeSectionsMinLimited(xV,yV,chV,minCh,func4coords,quality):
             shiftV=[xV[i],yV[i],0.0]
             hCoord=func4coords(quality,scale,shiftV)
             name='2dsection_'+str(i)
-            curveBezierFromPoints(hCoord,name,True)
+            curveBezierFromPoints(hCoord,name,True,True)#sharp closed
             sectionNames.append(name)
             
         #print('fut a')
@@ -474,7 +502,7 @@ def placeSectionsShrinked(xV,yV,chV,dShrink,func4coords,func4idx,quality):
                 idx2Kill=idx2Kill-1
                 lastIdx=idx2Kill[j]
                 
-        curveBezierFromPoints(hCoordShrinked,'2dsectionShrinked_'+str(i),True)
+        curveBezierFromPoints(hCoordShrinked,'2dsectionShrinked_'+str(i),True,True)#sharp closed
 
 
 
@@ -511,5 +539,47 @@ def bridgeListOfEdgeLoopsCloseOuterWithFace(sectionNames,targetName):
     bpy.context.selected_objects[0].name=targetName
     bpy.ops.object.editmode_toggle()
         
+
+
+# takes the 'super' coordinate set which are way to much points for us (e.g. 200)and generates
+# a set of candidate sets which can be copied over from command line to the af_xy file with reduced
+# number of points, following from curve simplification (reduces number of points with least possible error)
+# For the curve simplification check to have edit>preferences>add-ons> Add curve: simplfy curves+ activated
+#
+# A example to get the super set is:
+# coords=mh30modpk.coords('super',1.0,[0.0,0.0,0.0])
+# errPara here is in curve simplyfy parameter - a ggod value for normal is 0.0002
+# tDelete - should the curves be deleted? (keep for optical inspection of error)
+def foilDataGenerateReducedQuality(coords,errPara,tDelete):
+
+    curve1=curveBezierFromPoints(coords,'testcurve',True,True)#sharp closed
+    curve2=bpy.ops.curve.simplify(error=errPara)
     
-        
+    
+    #bpy.ops.curve.simplify(error=0.0002)
+    ob=bpy.context.object
+    
+    #we keep the most positive in y as leading edge idx
+    lastDist=-1e42
+    idx=0
+    idxLe=0
+    for p in ob.data.splines.active.bezier_points:
+        print("["+str(p.co[0])+", "+str(p.co[1])+", "+str(p.co[2])+"],")
+        #print(p.co)
+        #print(str(p.co[1]))
+        if(p.co[1]>lastDist):
+            lastDist=p.co[1]
+            idxLe=idx
+
+        idx=idx+1
+
+    #print("NOTE: check to not have 2 points (to close) on the trailing edge!")
+    print("Number of points: "+str(len(ob.data.splines.active.bezier_points)))
+    print("Leading edge index: "+str(idxLe)+" with value: "+str(lastDist))
+
+    # cleanup
+    if tDelete:
+        deleteByName('Simple_testcurve')
+        deleteByName('testcurve')
+
+
