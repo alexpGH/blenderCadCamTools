@@ -39,13 +39,13 @@ reload(mh30modpk)
 
 
 
-if 1:
+if 0:
     #=== delete all but camera and lamp to start from a clean scene collection
     wingLib.deleteAllButNames(['outl','outl2','myWing1','myWing2'])
 
 
 #block 'reduce quality'
-if 1:
+if 0:
     coords=mh30modpk.coords('super',1.0,[0.0,0.0,0.0])
     #wingLib.foilDataGenerateReducedQuality(coords,0.0002,False) #False=don't delete the curves
     #wingLib.foilDataGenerateReducedQuality(coords,0.0004,False) #False=don't delete the curves
@@ -53,10 +53,16 @@ if 1:
     
     
 #block 'check result'
-if 1:
+if 0:
     coords=mh30modpk.coords('full',1.0,[0.0,0.0,0.0])
     #coords=mh30modpk.coords('medium',1.0,[0.0,0.0,0.0])
     #coords=mh30modpk.coords('low',1.0,[0.0,0.0,0.0])
     wingLib.curveBezierFromPoints(coords,'testcurveFin',True,True)
 
-
+#block 'export 4 xlfr5'
+if 1:
+    coords=mh30modpk.coords('super',1.0,[0.0,0.0,0.0])
+    filename=bpy.path.abspath("//MH30pk_xlfr5.dat")
+    #wingLib.foilExport(coords,'MH30pk',filename,'selig4spaces')
+    wingLib.foilExport(coords,'MH30pk',filename,'xlfr54spaces')
+    

@@ -13,7 +13,7 @@ from __future__ import division
 import bpy
 import math
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 
 
@@ -583,3 +583,35 @@ def foilDataGenerateReducedQuality(coords,errPara,tDelete):
         deleteByName('testcurve')
 
 
+
+def foilExport(coords,profileName,filename,mode):
+
+    if(mode=='selig4spaces'):
+        f = open(filename, "w")
+        f.write(profileName+"\n")
+        for i in coords:
+            f.write(str(i[1])+"    "+str(i[2])+"\n")
+        f.close()
+        
+    elif(mode=='xlfr54spaces'):
+        f = open(filename, "w")
+        f.write(profileName+"\n")
+        for i in coords:
+            f.write(str(i[1]*-1.0)+"    "+str(i[2])+"\n")
+        f.close()
+        
+        
+    else:
+        raise Exception('unknown mode:'+mode)
+    
+
+def plotArray(x,y,title,outfile):
+    print("##################### Plotting ##################")
+    fig=plt.figure()
+    ax= fig.add_subplot(111)
+    ax.plot(x,y)
+
+    plt.title(title)
+    plt.grid(True)
+
+    fig.savefig(outfile)

@@ -86,7 +86,17 @@ if 1:
     x,y=wingLib.ellipseParamV(a,b,nSec)
     ch=np.multiply(y,2.0)#
 
+    #plot Re(span)
+    if 1:
+        v=8.1 # determined from stall velocity, see e.g. https://alexpgh.github.io/foss-toolchain-mpcnc/blenderKissSlope/#wing-loading-and-re
+        nu=1.52E-05
+        outFile=bpy.path.abspath("//Fig_ReSpan.png")
+        Re=np.multiply(ch,v/nu)
 
+        n=int(len(Re)/2)+1
+
+        wingLib.plotArray(x[0:n],Re[0:n],'Re(span)',outFile)
+        
     # we shift the leading edge to get the sickle shape  -> get shifted leading edge
     #
     ysh=wingLib.elipticShift(x,y, 0.008, 0.999,-1.0)
