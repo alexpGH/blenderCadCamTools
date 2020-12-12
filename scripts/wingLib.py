@@ -605,12 +605,13 @@ def foilExport(coords,profileName,filename,mode):
         raise Exception('unknown mode:'+mode)
     
 
-def plotArray(x,y,title,outfile):
+def plotArray(x,y,title,legend,outfile):
     print("##################### Plotting ##################")
     fig=plt.figure()
     ax= fig.add_subplot(111)
     ax.plot(x,y)
-
+    ax.legend(legend)
+    
     plt.title(title)
     plt.grid(True)
 

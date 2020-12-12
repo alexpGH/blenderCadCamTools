@@ -24,7 +24,8 @@
 import math
 import numpy as np
 
-#    MH30 mod. Acro by Philip Kolb https://www.rc-network.de/threads/stingray-profilfrage.173616/
+#    MH30 (9.18 / 1.62) mod. by Philip Kolb https://www.rc-network.de/threads/stingray-profilfrage.173616/
+#    intended for ResqrtCl 200-240 k
 def coords(quality,scale,shiftV):
 
     if(quality=='super'):

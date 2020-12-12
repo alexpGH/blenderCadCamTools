@@ -88,14 +88,36 @@ if 1:
 
     #plot Re(span)
     if 1:
-        v=8.1 # determined from stall velocity, see e.g. https://alexpgh.github.io/foss-toolchain-mpcnc/blenderKissSlope/#wing-loading-and-re
+        v=7.68# determined from stall velocity, see e.g. https://alexpgh.github.io/foss-toolchain-mpcnc/blenderKissSlope/#wing-loading-and-re
+        v2=9.23
+        
+        #v3=15.0
+        #v4=30.0
+        #v5=45.0
+                
         nu=1.52E-05
-        outFile=bpy.path.abspath("//Fig_ReSpan.png")
-        Re=np.multiply(ch,v/nu)
+        outFile=bpy.path.abspath("//Fig_ReSpan_fast.png")
+        Re=[]
+        Re.append(np.multiply(ch,v/nu))
+        Re.append(np.multiply(ch,v2/nu))
+        #Re.append(np.multiply(ch,v3/nu))
+        #Re.append(np.multiply(ch,v4/nu))
+        #Re.append(np.multiply(ch,v5/nu))
+        numpy_array = np.array(Re)
+        transpose = numpy_array.T
 
-        n=int(len(Re)/2)+1
+        #legend=[str(v)+' m/s', str(v2), str(v3),str(v4),str(v5)]
+        legend=[]
+        #n=int(len(Re)/2)+1
+        n=int(transpose.shape[0]/2)+1
+        import ipdb
+        ipdb.set_trace()
+        ipdb.set_trace(context=5)
 
-        wingLib.plotArray(x[0:n],Re[0:n],'Re(span)',outFile)
+        #wingLib.plotArray(x[0:n],Re[0:n],'Re(span)',outFile)
+        #wingLib.plotArray(x,Re,'Re(span)',outFile)
+        wingLib.plotArray(x[0:n],transpose[0:n,:],'Re(span)', legend, outFile)
+
         
     # we shift the leading edge to get the sickle shape  -> get shifted leading edge
     #
