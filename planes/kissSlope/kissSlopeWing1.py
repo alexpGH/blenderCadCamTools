@@ -56,22 +56,16 @@ if 1:
     #example wing
     #=============================================================
 
+    
     #=== basic geometry
     foilwidth=1.6
-    chordlength=0.204
+    chAdditive=0.06             #we add this additive as constant to the chordlength to generate an (towrds tip) increasing over-elliptic ch
+    chordlength=0.17
 
+    #=== ellipse parameters
     a=foilwidth/2.0
-    b=chordlength/2.0
+    b=(chordlength-chAdditive)/2.0
     nSec=41*2
-    
-    #--- sickle params
-    #the leading edge is shifted backwards (to negative y) starting bejond a certain distance away from the center by x⁻p
-    p=4 #exponent for shift
-    dyMax=(b)*2/3*1.5 #how far ist the outermost point (the wingtip) shifted
-    dyMax=0.1*(b)*2/3*1.5 #how far ist the outermost point (the wingtip) shifted
-
-    xFactStart=1.0#0.8 #shift is x^p fitted from beyond xFactStart*100%. e.g. 0.8 means that only the outer 20% of points are shifted 
-
 
 
     #shellthickness
@@ -86,8 +80,10 @@ if 1:
     x,y=wingLib.ellipseParamV(a,b,nSec)
     ch=np.multiply(y,2.0)#
 
+
+
     #plot Re(span)
-    if 1:
+    if 0:
         v=7.68# determined from stall velocity, see e.g. https://alexpgh.github.io/foss-toolchain-mpcnc/blenderKissSlope/#wing-loading-and-re
         v2=9.23
         
@@ -110,26 +106,33 @@ if 1:
         legend=[]
         #n=int(len(Re)/2)+1
         n=int(transpose.shape[0]/2)+1
-        import ipdb
-        ipdb.set_trace()
-        ipdb.set_trace(context=5)
+        
+        #import ipdb
+        #ipdb.set_trace()
+        #ipdb.set_trace(context=5)
 
         #wingLib.plotArray(x[0:n],Re[0:n],'Re(span)',outFile)
         #wingLib.plotArray(x,Re,'Re(span)',outFile)
         wingLib.plotArray(x[0:n],transpose[0:n,:],'Re(span)', legend, outFile)
 
         
-    # we shift the leading edge to get the sickle shape  -> get shifted leading edge
-    #
-    ysh=wingLib.elipticShift(x,y, 0.008, 0.999,-1.0)
-    #ysh=wingLib.elipticShift(x,y, 0.06, 0.999,-1.0) #less sweep back
-    
-    # we shift the leading edge to get the sickle shape  -> get shifted leading edge
-    ysh=wingLib.powerShift(x,ysh, p, 0.06, 0.28) 
-    #ysh=wingLib.powerShift(x,ysh, p, 0.08, 0.28) #less sweep back
+    #=== leading edge shift definition
+    #    we shift the leading edge to get the sickle shape  -> get shifted leading edge
+    LeShiftL=[]
+    LeShiftL.append(wingLib.LeShift('elliptic',0.008, 0.999,-1.0,foilwidth/2.0))
+    LeShiftL.append(wingLib.LeShift('power',0.06, 0.28,1.0 ,foilwidth/2.0, 4))
+
+
+    #LeShiftL.append(wingLib.LeShift('elliptic',0.06, 0.999,-1.0))
+    #LeShiftL.append(wingLib.LeShift('power',, 0.08, 0.28,1.0 ,4))
+
+    ysh=wingLib.applyLeShifts(x,y, LeShiftL)
+
+
 
     #placeSections(x,ysh,ch)
     sectionNames=wingLib.placeSectionsMinLimited(x,ysh,ch,0.001,func4coords,quality)
+
 
 if 1:
 
@@ -138,4 +141,5 @@ if 1:
     #shift to origin
     bpy.context.object.location[1] = -chordlength/2.0
     bpy.context.object.location[2] = 0.0
+
 
