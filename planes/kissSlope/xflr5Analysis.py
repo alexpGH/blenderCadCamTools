@@ -53,7 +53,7 @@ if 1:
     #=== basic geometry
     foilwidth=1.6
     chAdditive=0.06             #we add this additive as constant to the chordlength to generate an (towrds tip) increasing over-elliptic ch
-    chordlength=0.17
+    chordlength=0.17*1.0385
 
     #=== ellipse parameters
     a=foilwidth/2.0
@@ -93,29 +93,23 @@ if 1:
         BSectionL.append(wingALib.BaseSection('AG14', 99.0, 0.0, 0,1.0, False))
 
 
-    if 0:
-        # following elliptic cuve            
-        BSectionL.append(wingALib.BaseSection('AG25', 0.0, 0.0, 0, 1.0, False))
-        BSectionL.append(wingALib.BaseSection('AG25', 5.0, 0.0, 1, 1.0, True, 'lCh'))
-        BSectionL.append(wingALib.BaseSection('AG26', 50.0, 0.0, 10, 1.0, True, 'lCh'))
-        BSectionL.append(wingALib.BaseSection('AG14', 95.0, 0.0, 8, 1.0, False))
-        BSectionL.append(wingALib.BaseSection('AG14', 99.0, 0.0, 0,1.0, False))
-
-
     if 1:
-        # following elliptic cuve            
-        #BSectionL.append(wingALib.BaseSection('AG25', 0.0, 0.0, 0, 1.0, False))
-        #BSectionL.append(wingALib.BaseSection('AG25', 5.0, 0.0, 1, 1.0, True, 'lCh'))
-        #BSectionL.append(wingALib.BaseSection('AG26', 40.0, 0.0, 10, 1.0, True, 'lCh',0.0))
-        #BSectionL.append(wingALib.BaseSection('AG14', 95.0, -2.0, 8, 1.0, False,'lCh', 0.02))
-        #BSectionL.append(wingALib.BaseSection('AG14', 99.0, -2.0, 0,1.0, False,'lCh', 0.02))
+        # simple straight 
+        BSectionL.append(wingALib.BaseSection('AG25', 0.0, 0.0, 0, 1.0, False,'lCh',chAdditive))
+        BSectionL.append(wingALib.BaseSection('AG25', 5.0, 0.0, 0, 1.0, True, 'lCh',chAdditive))
+        BSectionL.append(wingALib.BaseSection('AG26', 40.0, 0.0, 0, 1.0, True, 'lCh',chAdditive))
+        BSectionL.append(wingALib.BaseSection('AG14', 95.0, -0.0, 0, 4.0, False,'lCh', chAdditive))
+        BSectionL.append(wingALib.BaseSection('AG14', 100.0, -0.0, 0,1.0, False,'lCh', chAdditive))
+
+
+    if 0:
 
         #                           profile,rel span in %, twistangle, nSubsections, scale NpanelsPerM by this, tMorph, morphType, chordAditive   
-        BSectionL.append(wingALib.BaseSection('AG25', 0.0, 0.0, 0, 1.0, False,'lCh',chordAdditive))
-        BSectionL.append(wingALib.BaseSection('AG25', 5.0, 0.0, 1, 1.0, True, 'lCh',chordAdditive))
-        BSectionL.append(wingALib.BaseSection('AG26', 40.0, 0.0, 10, 1.0, True, 'lCh',chordAdditive))
-        BSectionL.append(wingALib.BaseSection('AG14', 95.0, -0.0, 8, 1.0, False,'lCh', chordAdditive))
-        BSectionL.append(wingALib.BaseSection('AG14', 99.0, -0.0, 0,1.0, False,'lCh', chordAdditive))
+        BSectionL.append(wingALib.BaseSection('AG25', 0.0, 0.0, 0, 1.0, False,'lCh',chAdditive))
+        BSectionL.append(wingALib.BaseSection('AG25', 5.0, 0.0, 1, 1.0, True, 'lCh',chAdditive))
+        BSectionL.append(wingALib.BaseSection('AG26', 40.0, 0.0, 10, 1.0, True, 'lCh',chAdditive))
+        BSectionL.append(wingALib.BaseSection('AG14', 95.0, -0.0, 8, 1.0, False,'lCh', chAdditive))
+        BSectionL.append(wingALib.BaseSection('AG14', 100.0, -0.0, 0,1.0, False,'lCh', chAdditive))
 
     if 0:
         BSectionL.append(wingALib.BaseSection('AG25', 0.0, 0.0, 0, 1.0, False))
@@ -129,22 +123,14 @@ if 1:
 
 
     soup=wingALib.buildXPlaneTree()
-    soup, factL =wingALib.xPlaneAddSectionsElliptic(soup, LeShiftL, BSectionL, foilwidth, chordlength-chordAdditive, 13, 40, roundTo)
+    soup, factL =wingALib.xPlaneAddSectionsElliptic(soup, LeShiftL, BSectionL, foilwidth, chordlength-chAdditive, 13, 40, roundTo)
 
     print(factL)
 
-    if 0:
-        with open("/qnap/flxride/construction/foil/blender/planes/kissSlope/a1_straight.xml", "w") as f:
-          #f.write(str(soup.prettify()))
-          f.write(str(soup))
-
-    if 0:
-        with open("/qnap/flxride/construction/foil/blender/planes/kissSlope/a1_ellipticLinear.xml", "w") as f:
-          f.write(str(soup))
     if 1:
-        with open("/qnap/flxride/construction/foil/blender/planes/kissSlope/a1_ellipticLinear_0.40_0.95_1.0_scA0.03.xml", "w") as f:
-          f.write(str(soup))
-
+        with open("/qnap/flxride/construction/foil/blender/planes/kissSlope/a1_14lCh_0.40_0.95_0.0_added_6_straight.xml", "w") as f:
+            f.write(str(soup))
+        print("xmlf file written")
 
 if 0:
     #----------------------------------------------------------------------

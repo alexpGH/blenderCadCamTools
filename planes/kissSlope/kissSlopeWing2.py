@@ -180,8 +180,8 @@ if 1:
 
     #plot Re(span)
     if 0:
-        v=7.68# determined from stall velocity, see e.g. https://alexpgh.github.io/foss-toolchain-mpcnc/blenderKissSlope/#wing-loading-and-re
-        v2=9.23
+        v=8.0# determined from stall velocity, see e.g. https://alexpgh.github.io/foss-toolchain-mpcnc/blenderKissSlope/#wing-loading-and-re
+        v2=9.7
         
         #v3=15.0
         #v4=30.0
@@ -211,6 +211,10 @@ if 1:
         #wingLib.plotArray(x,Re,'Re(span)',outFile)
         wingLib.plotArray(x[0:n],transpose[0:n,:],'Re(span)', legend, outFile)
 
+        import ipdb
+        ipdb.set_trace()
+        ipdb.set_trace(context=5)
+    
 
 
 
